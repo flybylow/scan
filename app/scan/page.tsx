@@ -15,13 +15,22 @@ const Scanner = dynamic(() => import("@/components/Scanner"), {
 
 type ScanState = "scanning" | "loading" | "found" | "not_found" | "error";
 
+/** GTINs that exist in products.ttl for testing. */
+const TEST_GTINS = [
+  { gtin: "3274080005003", label: "Cristaline water" },
+  { gtin: "7622210449283", label: "Prince biscuit" },
+  { gtin: "3017620425035", label: "Nutella" },
+];
+
 export default function ScanPage() {
   const router = useRouter();
   const [state, setState] = useState<ScanState>("scanning");
   const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [scannedGtin, setScannedGtin] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleResult = useCallback(async (gtin: string) => {
+    setScannedGtin(gtin);
     setState("loading");
     setErrorMessage(null);
     try {
@@ -48,8 +57,16 @@ export default function ScanPage() {
   const backToScanner = useCallback(() => {
     setState("scanning");
     setProduct(null);
+    setScannedGtin(null);
     setErrorMessage(null);
   }, []);
+
+  const tryTestGtin = useCallback(
+    (gtin: string) => {
+      handleResult(gtin);
+    },
+    [handleResult]
+  );
 
   if (state === "scanning") {
     return (
@@ -66,6 +83,11 @@ export default function ScanPage() {
       <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4 text-zinc-300 p-6">
         <div className="h-12 w-12 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
         <p className="text-sm">Looking up product in products.ttl…</p>
+        {scannedGtin && (
+          <p className="text-xs text-zinc-500 font-mono tabular-nums">
+            Scanned GTIN: {scannedGtin}
+          </p>
+        )}
       </div>
     );
   }
@@ -74,12 +96,31 @@ export default function ScanPage() {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6 p-6 text-zinc-100">
         <p className="text-center text-lg font-medium">
-          Product not found in dataset.
+          Product not in dataset
         </p>
+        {scannedGtin && (
+          <p className="text-center font-mono text-sm text-zinc-400 tabular-nums">
+            Scanned GTIN: {scannedGtin}
+          </p>
+        )}
         <p className="text-sm text-zinc-400 text-center max-w-sm">
-          This GTIN is not in products.ttl. Try another barcode or add the product to the dataset.
+          Our dataset has a limited set of products. Try another barcode or use a test product below to verify the scanner.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-2 w-full max-w-xs">
+          <span className="text-xs text-zinc-500 text-center">Try a barcode we have:</span>
+          {TEST_GTINS.map(({ gtin, label }) => (
+            <button
+              key={gtin}
+              type="button"
+              onClick={() => tryTestGtin(gtin)}
+              className="px-4 py-2.5 rounded-lg bg-zinc-800 text-zinc-200 text-left text-sm hover:bg-zinc-700 touch-manipulation border border-zinc-700"
+            >
+              <span className="font-mono tabular-nums">{gtin}</span>
+              <span className="text-zinc-500 ml-2">— {label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3 mt-2">
           <button
             type="button"
             onClick={backToScanner}
@@ -126,6 +167,12 @@ export default function ScanPage() {
   if (state === "found" && product && product.nodeType === "product") {
     return (
       <div className="min-h-screen bg-black flex flex-col">
+        {scannedGtin && (
+          <div className="shrink-0 px-4 py-2 bg-zinc-900/80 text-center">
+            <span className="text-xs text-zinc-500">Scanned GTIN </span>
+            <span className="font-mono text-sm text-zinc-300 tabular-nums">{scannedGtin}</span>
+          </div>
+        )}
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-0">
           <div className="lg:col-span-2 min-h-[50vh] lg:min-h-0 relative">
             <ScanProductGraph productUri={product.uri} />

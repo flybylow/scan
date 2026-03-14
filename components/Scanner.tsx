@@ -27,6 +27,7 @@ export default function Scanner({
     "requesting"
   );
   const [errorMsg, setErrorMsg] = useState<string>("");
+  const [lastDecoded, setLastDecoded] = useState<{ raw: string; gtin: string } | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const stoppedRef = useRef(false);
 
@@ -66,6 +67,7 @@ export default function Scanner({
           const text = result.getText();
           const gtin = extractGtin(text);
           if (gtin) {
+            setLastDecoded({ raw: text, gtin });
             stopCamera();
             onResult(gtin);
           }
@@ -107,10 +109,26 @@ export default function Scanner({
         />
         {status === "ready" && (
           <div
-            className="absolute inset-0 pointer-events-none flex items-center justify-center"
+            className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center gap-4"
             aria-hidden
           >
             <div className="w-56 h-56 md:w-72 md:h-72 border-2 border-white/70 rounded-xl" />
+            <p className="text-xs text-zinc-400 text-center px-4">
+              Point at a barcode or QR code
+            </p>
+          </div>
+        )}
+        {lastDecoded && (
+          <div className="absolute bottom-20 left-4 right-4 rounded-lg bg-black/80 border border-zinc-600 px-4 py-3 text-center pointer-events-none">
+            <p className="text-xs text-zinc-400">Detected</p>
+            <p className="font-mono text-sm text-white tabular-nums mt-0.5">
+              GTIN: {lastDecoded.gtin}
+            </p>
+            {lastDecoded.raw !== lastDecoded.gtin && (
+              <p className="text-xs text-zinc-500 mt-1 truncate" title={lastDecoded.raw}>
+                Raw: {lastDecoded.raw}
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -140,6 +158,19 @@ export default function Scanner({
           >
             Back
           </button>
+          {status === "ready" && (
+            <button
+              type="button"
+              onClick={() => {
+                stopCamera();
+                onResult("3017620425035");
+              }}
+              className="px-3 py-2 rounded-lg bg-white/15 text-zinc-300 text-xs font-medium hover:bg-white/25 touch-manipulation"
+              title="Test with Nutella GTIN (no scan needed)"
+            >
+              Try test barcode
+            </button>
+          )}
         </div>
       )}
     </div>

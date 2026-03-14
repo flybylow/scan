@@ -30,6 +30,21 @@ Deploying gives you a stable HTTPS URL (e.g. `https://prodlist-triple.vercel.app
 
 ## After deploy
 
+- **Production URL:** https://prodlisttriple.vercel.app (when linked to this project).
 - Your app runs over **HTTPS**, so the camera works on mobile.
 - `public/products.ttl` is served at `/products.ttl`; the scanner and graph use it from the client.
 - No server or tunnel needed; share the Vercel URL and open it on any device.
+
+## Deploy from CLI (non-interactive)
+
+If you need to deploy without prompts (e.g. CI or script), pass the scope:
+
+```bash
+vercel --yes --scope humanmachine
+```
+
+To promote the current build to production:
+
+```bash
+vercel --prod --scope humanmachine
+```
